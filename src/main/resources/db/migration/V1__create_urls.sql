@@ -1,0 +1,8 @@
+CREATE TABLE urls (
+    code VARCHAR(32) PRIMARY KEY,
+    long_url TEXT NOT NULL,
+    expires_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE SEQUENCE url_id_seq START WITH 1 INCREMENT BY 1000;
