@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: url-shortener
+  datasource:
+    url: jdbc:postgresql://localhost:5433/shortener
+    username: shortener
+    password: shortener
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
