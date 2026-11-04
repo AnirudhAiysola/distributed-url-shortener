@@ -5,7 +5,7 @@ public class Base62 {
 
     private static final int CODE_LENGTH = 7;
 
-    private static final long MAX_VALUE = 3_521_614_606_208L;
+    static final long MAX_VALUE = 3_521_614_606_208L;
 
     private Base62(){}
 
