@@ -17,3 +17,6 @@ management:
     web:
       exposure:
         include: health
+shortener:
+  code:
+    multiplier: 1580030173
