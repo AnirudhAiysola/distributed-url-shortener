@@ -18,10 +18,6 @@ public class IdBlockAllocator {
     }
 
     public synchronized long nextId() {
-        // TODO: if the current block is used up (next >= blockEnd):
-        //         - get a new block start from nextval('url_id_seq')
-        //         - set next to the start, and blockEnd to start + BLOCK_SIZE
-        // TODO: return next, then increment it
         if(next >= blockEnd){
             long newStart = jdbcTemplate.queryForObject("SELECT nextval('url_id_seq')", Long.class);
             next = newStart;
