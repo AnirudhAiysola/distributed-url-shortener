@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -54,5 +55,16 @@ public class ShortUrlService {
             }
         }
         throw new IllegalStateException("Could not generate a new code");
+    }
+    public ShortUrl resolve(String code) {
+
+        ShortUrl url = repository.findById(code)
+                .orElseThrow(() -> new ShortUrlNotFoundException(code));
+
+        if (url.isExpired(clock.instant())) {
+            throw new ShortUrlExpiredException(code);
+        }
+
+        return url;
     }
 }

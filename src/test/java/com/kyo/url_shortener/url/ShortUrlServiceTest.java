@@ -7,6 +7,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -98,5 +99,31 @@ class ShortUrlServiceTest {
     void rejectsExpiryEqualToNow() {
         assertThatThrownBy(() -> service.create(new CreateShortUrlCommand(LONG_URL, null, NOW)))
                 .isInstanceOf(InvalidExpiryException.class);
+    }
+    @Test
+    void resolveReturnsTheUrl() {
+        when(repository.findById("abc1234"))
+                .thenReturn(Optional.of(new ShortUrl("abc1234", LONG_URL, null, NOW)));
+
+        ShortUrl result = service.resolve("abc1234");
+
+        assertThat(result.getLongUrl()).isEqualTo(LONG_URL);
+    }
+
+    @Test
+    void resolveMissingCodeThrowsNotFound() {
+        when(repository.findById("nope123")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.resolve("nope123"))
+                .isInstanceOf(ShortUrlNotFoundException.class);
+    }
+
+    @Test
+    void resolveExpiredCodeThrowsExpired() {
+        when(repository.findById("old1234"))
+                .thenReturn(Optional.of(new ShortUrl("old1234", LONG_URL, NOW.minusSeconds(60), NOW.minusSeconds(3600))));
+
+        assertThatThrownBy(() -> service.resolve("old1234"))
+                .isInstanceOf(ShortUrlExpiredException.class);
     }
 }
