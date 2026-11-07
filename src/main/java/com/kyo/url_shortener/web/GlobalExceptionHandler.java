@@ -2,6 +2,8 @@ package com.kyo.url_shortener.web;
 
 import com.kyo.url_shortener.url.AliasAlreadyTakenException;
 import com.kyo.url_shortener.url.InvalidExpiryException;
+import com.kyo.url_shortener.url.ShortUrlExpiredException;
+import com.kyo.url_shortener.url.ShortUrlNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -36,6 +38,21 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         problem.setTitle("Internal server Error");
 
         log.error("Unexpected Error", ex);
+
+        return problem;
+    }
+    @ExceptionHandler(ShortUrlNotFoundException.class)
+    ProblemDetail handleNotFound(ShortUrlNotFoundException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+        problem.setTitle("Short URL not found");
+
+        return problem;
+    }
+
+    @ExceptionHandler(ShortUrlExpiredException.class)
+    ProblemDetail handleExpired(ShortUrlExpiredException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.GONE, ex.getMessage());
+        problem.setTitle("Short URL expired");
 
         return problem;
     }
