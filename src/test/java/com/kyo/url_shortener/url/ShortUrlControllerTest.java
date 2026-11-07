@@ -73,4 +73,43 @@ class ShortUrlControllerTest {
                 """)).andExpect(status().isBadRequest());
         verify(service, never()).create(any());
     }
+    @Test
+    void takenAliasReturns409() throws Exception {
+        when(service.create(any(CreateShortUrlCommand.class)))
+                .thenThrow(new AliasAlreadyTakenException("sai-resume"));
+        mockMvc.perform(post("/api/v1/urls").contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"longUrl": "https://example.com/some/long/path", "alias" : "sai-resume"}
+                        """)).andExpect(status().isConflict())
+                .andExpect(jsonPath("$.title").value("Alias already taken"));
+
+    }
+
+    @Test
+    void invalidExpiryReturns400() throws Exception {
+        when(service.create(any(CreateShortUrlCommand.class)))
+                .thenThrow(new InvalidExpiryException(CREATED));
+
+        mockMvc.perform(post("/api/v1/urls")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {"longUrl": "https://example.com/some/long/path"}
+                            """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title").value("Invalid expiry date, it must be greater than NOW"));
+    }
+
+    @Test
+    void unexpectedErrorReturnsGeneric500() throws Exception {
+        when(service.create(any(CreateShortUrlCommand.class)))
+                .thenThrow(new RuntimeException("database password is hunter2"));
+
+        mockMvc.perform(post("/api/v1/urls")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {"longUrl": "https://example.com/some/long/path"}
+                            """))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.detail").value("Internal Server Error, Something went wrong"));
+    }
 }
