@@ -11,8 +11,17 @@ spring:
       ddl-auto: validate
   flyway:
     enabled: true
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 100ms
+      connect-timeout: 200ms
 
 management:
+  health:
+    redis:
+      enabled: false
   endpoints:
     web:
       exposure:
