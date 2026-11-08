@@ -29,11 +29,14 @@ public class ShortUrlService {
         if(command.expiresAt() != null && !command.expiresAt().isAfter(now)){
             throw new InvalidExpiryException(command.expiresAt());
         }
-
+        ShortUrl saved = null;
         if(command.alias() != null){
-            return createWithAlias(command, now);
+            saved = createWithAlias(command, now);
+        }else{
+            saved = createWithGeneratedCode(command,now);
         }
-        return createWithGeneratedCode(command,now);
+        cache.evict(saved.getCode());
+        return saved;
     }
 
     private ShortUrl createWithAlias(CreateShortUrlCommand command, Instant now) {
@@ -61,16 +64,26 @@ public class ShortUrlService {
     }
     public String resolve(String code) {
         Optional<String> cached = cache.get(code);
-        if(cached.isPresent()){
+        if (cached.isPresent()) {
+            if (cached.get().equals(ShortUrlCache.MISSING)) {
+                throw new ShortUrlNotFoundException(code);
+            }
             return cached.get();
         }
 
         Instant now = clock.instant();
 
-        ShortUrl url = repository.findById(code).orElseThrow(() -> new ShortUrlNotFoundException(code));
-        if(url.isExpired(now)){
+        Optional<ShortUrl> found = repository.findById(code);
+        if (found.isEmpty()) {
+            cache.putMissing(code);
+            throw new ShortUrlNotFoundException(code);
+        }
+        ShortUrl url = found.get();
+
+        if (url.isExpired(now)) {
             throw new ShortUrlExpiredException(code);
         }
+
         cache.put(code, url.getLongUrl(), cacheTtl(url, now));
         return url.getLongUrl();
     }
