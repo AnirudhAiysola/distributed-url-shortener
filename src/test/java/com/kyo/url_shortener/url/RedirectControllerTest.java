@@ -28,8 +28,7 @@ class RedirectControllerTest {
 
     @Test
     void existingCodeRedirectsWith302() throws Exception {
-        when(service.resolve("abc1234"))
-                .thenReturn(new ShortUrl("abc1234", LONG_URL,null, CREATED));
+        when(service.resolve("abc1234")).thenReturn(LONG_URL);
 
         mockMvc.perform(get("/abc1234"))
                 .andExpect(status().isFound())

@@ -6,6 +6,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 
@@ -14,10 +15,12 @@ import java.util.Optional;
 public class ShortUrlService {
 
     static final int MAX_GENERATION_ATTEMPTS = 3;
+    static final Duration MAX_CACHE_TTL = Duration.ofHours(24);
 
     private final ShortUrlRepository repository;
     private final ShortCodeGenerator generator;
     private final Clock clock;
+    private final ShortUrlCache cache;
 
     // Deliberately NOT @Transactional: see concepts
     public ShortUrl create(CreateShortUrlCommand command) {
@@ -56,15 +59,26 @@ public class ShortUrlService {
         }
         throw new IllegalStateException("Could not generate a new code");
     }
-    public ShortUrl resolve(String code) {
-
-        ShortUrl url = repository.findById(code)
-                .orElseThrow(() -> new ShortUrlNotFoundException(code));
-
-        if (url.isExpired(clock.instant())) {
-            throw new ShortUrlExpiredException(code);
+    public String resolve(String code) {
+        Optional<String> cached = cache.get(code);
+        if(cached.isPresent()){
+            return cached.get();
         }
 
-        return url;
+        Instant now = clock.instant();
+
+        ShortUrl url = repository.findById(code).orElseThrow(() -> new ShortUrlNotFoundException(code));
+        if(url.isExpired(now)){
+            throw new ShortUrlExpiredException(code);
+        }
+        cache.put(code, url.getLongUrl(), cacheTtl(url, now));
+        return url.getLongUrl();
+    }
+
+    private Duration cacheTtl(ShortUrl url, Instant now) {
+        if(url.getExpiresAt() == null) return MAX_CACHE_TTL;
+        Duration untilExpiry = Duration.between(now, url.getExpiresAt());
+
+        return untilExpiry.compareTo(MAX_CACHE_TTL) < 0 ? untilExpiry : MAX_CACHE_TTL;
     }
 }

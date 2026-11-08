@@ -1,10 +1,12 @@
 package com.kyo.url_shortener.url;
 
 import com.kyo.url_shortener.shortcode.ShortCodeGenerator;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataIntegrityViolationException;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Optional;
@@ -26,7 +28,13 @@ class ShortUrlServiceTest {
     private final ShortUrlRepository repository = mock(ShortUrlRepository.class);
     private final ShortCodeGenerator generator = mock(ShortCodeGenerator.class);
     private final Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
-    private final ShortUrlService service = new ShortUrlService(repository, generator, clock);
+    private final ShortUrlCache cache = mock(ShortUrlCache.class);
+    private final ShortUrlService service = new ShortUrlService(repository, generator, clock, cache);
+
+    @BeforeEach
+    void cacheMissByDefault() {
+        when(cache.get(any())).thenReturn(Optional.empty());
+    }
 
     // Normal path: no alias, so the service generates a code and saves it.
     @Test
@@ -105,9 +113,9 @@ class ShortUrlServiceTest {
         when(repository.findById("abc1234"))
                 .thenReturn(Optional.of(new ShortUrl("abc1234", LONG_URL, null, NOW)));
 
-        ShortUrl result = service.resolve("abc1234");
+        String result = service.resolve("abc1234");
 
-        assertThat(result.getLongUrl()).isEqualTo(LONG_URL);
+        assertThat(result).isEqualTo(LONG_URL);
     }
 
     @Test
@@ -125,5 +133,34 @@ class ShortUrlServiceTest {
 
         assertThatThrownBy(() -> service.resolve("old1234"))
                 .isInstanceOf(ShortUrlExpiredException.class);
+    }
+    @Test
+    void resolveCacheHitSkipsTheDatabase() {
+        when(cache.get("abc1234")).thenReturn(Optional.of(LONG_URL));
+
+        String result = service.resolve("abc1234");
+
+        assertThat(result).isEqualTo(LONG_URL);
+        verify(repository, never()).findById(any());
+    }
+
+    @Test
+    void resolveCacheMissLoadsAndCachesFor24Hours() {
+        when(repository.findById("abc1234"))
+                .thenReturn(Optional.of(new ShortUrl("abc1234", LONG_URL, null, NOW)));
+
+        service.resolve("abc1234");
+
+        verify(cache).put("abc1234", LONG_URL, ShortUrlService.MAX_CACHE_TTL);
+    }
+
+    @Test
+    void cacheTtlIsCappedByExpiry() {
+        when(repository.findById("abc1234"))
+                .thenReturn(Optional.of(new ShortUrl("abc1234", LONG_URL, NOW.plusSeconds(600), NOW)));
+
+        service.resolve("abc1234");
+
+        verify(cache).put("abc1234", LONG_URL, Duration.ofMinutes(10));
     }
 }
