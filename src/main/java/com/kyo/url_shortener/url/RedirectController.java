@@ -17,8 +17,8 @@ public class RedirectController {
 
     @GetMapping("/{code:[A-Za-z0-9_-]{3,32}}")
     public ResponseEntity<Void> redirect(@PathVariable String code) {
-        ShortUrl url = service.resolve(code);
+        String longUrl = service.resolve(code);
 
-        return ResponseEntity.status(HttpStatus.FOUND).location((URI.create(url.getLongUrl()))).build();
+        return ResponseEntity.status(HttpStatus.FOUND).location((URI.create(longUrl))).build();
     }
 }
