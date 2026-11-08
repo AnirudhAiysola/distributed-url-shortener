@@ -40,4 +40,20 @@ class ShortUrlCacheTest {
 
         assertThat(ttlSeconds).isBetween(3500L, 3600L);
     }
+    @Test
+    void putMissingStoresTheMarkerWithShortTtl() {
+        cache.putMissing("missing02");
+
+        assertThat(cache.get("missing02")).contains(ShortUrlCache.MISSING);
+        assertThat(redis.getExpire("url:missing02")).isBetween(55L, 60L);
+    }
+
+    @Test
+    void evictRemovesTheEntry() {
+        cache.put("evict01", "https://example.com", Duration.ofHours(1));
+
+        cache.evict("evict01");
+
+        assertThat(cache.get("evict01")).isEmpty();
+    }
 }

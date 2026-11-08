@@ -163,4 +163,30 @@ class ShortUrlServiceTest {
 
         verify(cache).put("abc1234", LONG_URL, Duration.ofMinutes(10));
     }
+    @Test
+    void missingCodeIsNegativelyCached() {
+        when(repository.findById("nope123")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.resolve("nope123"))
+                .isInstanceOf(ShortUrlNotFoundException.class);
+        verify(cache).putMissing("nope123");
+    }
+
+    @Test
+    void negativeCacheHitThrowsWithoutTouchingTheDatabase() {
+        when(cache.get("nope123")).thenReturn(Optional.of(ShortUrlCache.MISSING));
+
+        assertThatThrownBy(() -> service.resolve("nope123"))
+                .isInstanceOf(ShortUrlNotFoundException.class);
+        verify(repository, never()).findById(any());
+    }
+
+    @Test
+    void createEvictsTheCacheEntry() {
+        when(repository.saveAndFlush(any(ShortUrl.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        service.create(new CreateShortUrlCommand(LONG_URL, "sai-blog", null));
+
+        verify(cache).evict("sai-blog");
+    }
 }
