@@ -1,5 +1,6 @@
 package com.kyo.url_shortener.url;
 
+import com.kyo.url_shortener.common.SingleFlight;
 import com.kyo.url_shortener.shortcode.ShortCodeGenerator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -21,6 +22,7 @@ public class ShortUrlService {
     private final ShortCodeGenerator generator;
     private final Clock clock;
     private final ShortUrlCache cache;
+    private final SingleFlight<String> singleFlight = new SingleFlight<>();
 
     // Deliberately NOT @Transactional: see concepts
     public ShortUrl create(CreateShortUrlCommand command) {
@@ -70,7 +72,17 @@ public class ShortUrlService {
             }
             return cached.get();
         }
+        return singleFlight.execute(code, () -> loadFromDatabase(code));
 
+    }
+
+    private Duration cacheTtl(ShortUrl url, Instant now) {
+        if(url.getExpiresAt() == null) return MAX_CACHE_TTL;
+        Duration untilExpiry = Duration.between(now, url.getExpiresAt());
+
+        return untilExpiry.compareTo(MAX_CACHE_TTL) < 0 ? untilExpiry : MAX_CACHE_TTL;
+    }
+    private String loadFromDatabase(String code) {
         Instant now = clock.instant();
 
         Optional<ShortUrl> found = repository.findById(code);
@@ -86,12 +98,5 @@ public class ShortUrlService {
 
         cache.put(code, url.getLongUrl(), cacheTtl(url, now));
         return url.getLongUrl();
-    }
-
-    private Duration cacheTtl(ShortUrl url, Instant now) {
-        if(url.getExpiresAt() == null) return MAX_CACHE_TTL;
-        Duration untilExpiry = Duration.between(now, url.getExpiresAt());
-
-        return untilExpiry.compareTo(MAX_CACHE_TTL) < 0 ? untilExpiry : MAX_CACHE_TTL;
     }
 }
