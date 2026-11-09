@@ -17,6 +17,15 @@ spring:
       port: 6379
       timeout: 100ms
       connect-timeout: 200ms
+  cloud:
+    aws:
+      region:
+        static: us-east-1
+      credentials:
+        access-key: local
+        secret-key: local
+      sqs:
+        endpoint: http://localhost:9324
 
 management:
   health:
@@ -30,3 +39,5 @@ shortener:
   base-url: http://localhost:8080
   code:
     multiplier: 1580030173
+  analytics:
+    queue: click-events
