@@ -15,5 +15,13 @@ services:
     container_name: shortener-redis
     ports:
       - "6379:6379"
+  elasticmq:
+    image: softwaremill/elasticmq-native
+    container_name: shortener-sqs
+    ports:
+      - "9324:9324"   # SQS API
+      - "9325:9325"   # web UI to browse queues
+    volumes:
+      - ./elasticmq/elasticmq.conf:/opt/elasticmq.conf
 volumes:
   pgdata:

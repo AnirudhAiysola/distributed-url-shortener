@@ -1,5 +1,6 @@
 package com.kyo.url_shortener.url;
 
+import com.kyo.url_shortener.analytics.ClickEventPublisher;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -20,11 +21,15 @@ class RedirectControllerTest {
     private static final Instant CREATED = Instant.parse("2026-11-07T10:00:00Z");
     private static final String LONG_URL = "https://example.com/some/long/path";
 
+
     @Autowired
     MockMvc mockMvc;
 
     @MockitoBean
     ShortUrlService service;
+
+    @MockitoBean
+    ClickEventPublisher clickEventPublisher;
 
     @Test
     void existingCodeRedirectsWith302() throws Exception {
