@@ -41,3 +41,5 @@ shortener:
     multiplier: 1580030173
   analytics:
     queue: click-events
+  worker:
+    enabled: true
