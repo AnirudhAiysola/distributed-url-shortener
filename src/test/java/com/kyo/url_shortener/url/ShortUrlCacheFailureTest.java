@@ -1,5 +1,6 @@
 package com.kyo.url_shortener.url;
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.redis.RedisConnectionFailureException;
@@ -22,7 +23,7 @@ class ShortUrlCacheFailureTest {
     private final StringRedisTemplate redis = mock(StringRedisTemplate.class);
     @SuppressWarnings("unchecked")
     private final ValueOperations<String, String> ops = mock(ValueOperations.class);
-    private final ShortUrlCache cache = new ShortUrlCache(redis);
+    private final ShortUrlCache cache = new ShortUrlCache(redis, new SimpleMeterRegistry());
 
     @BeforeEach
     void wireOps() {

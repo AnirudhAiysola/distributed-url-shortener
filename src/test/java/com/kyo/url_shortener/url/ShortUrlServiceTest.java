@@ -1,6 +1,7 @@
 package com.kyo.url_shortener.url;
 
 import com.kyo.url_shortener.shortcode.ShortCodeGenerator;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -29,7 +30,8 @@ class ShortUrlServiceTest {
     private final ShortCodeGenerator generator = mock(ShortCodeGenerator.class);
     private final Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
     private final ShortUrlCache cache = mock(ShortUrlCache.class);
-    private final ShortUrlService service = new ShortUrlService(repository, generator, clock, cache);
+    private final ShortUrlService service =
+            new ShortUrlService(repository, generator, clock, cache, new SimpleMeterRegistry());
 
     @BeforeEach
     void cacheMissByDefault() {

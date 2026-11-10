@@ -1,6 +1,7 @@
 package com.kyo.url_shortener.analytics;
 
 import io.awspring.cloud.sqs.operations.SqsAsyncOperations;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -22,8 +23,8 @@ class ClickEventPublisherTest {
     private static final Instant NOW = Instant.parse("2026-11-09T19:30:00Z");
 
     private final SqsAsyncOperations sqs = mock(SqsAsyncOperations.class);
-    private final ClickEventPublisher publisher =
-            new ClickEventPublisher(sqs, Clock.fixed(NOW, ZoneOffset.UTC), "click-events");
+    private final ClickEventPublisher publisher = new ClickEventPublisher(
+            sqs, Clock.fixed(NOW, ZoneOffset.UTC), "click-events", new SimpleMeterRegistry());
 
     @Test
     void sendsAnEventWithCodeTimeAndId() {
