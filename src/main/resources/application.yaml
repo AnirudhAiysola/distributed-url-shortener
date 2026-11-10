@@ -11,6 +11,11 @@ spring:
       ddl-auto: validate
   flyway:
     enabled: true
+  server:
+    forward-headers-strategy: native
+    tomcat:
+      mbeanregistry:
+        enabled: true
   data:
     redis:
       host: localhost
