@@ -1,0 +1,9 @@
+target/
+.git/
+.idea/
+infra/
+load/
+grafana/
+prometheus/
+elasticmq/
+*.md
