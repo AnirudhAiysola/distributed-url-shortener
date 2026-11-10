@@ -1,5 +1,6 @@
 package com.kyo.url_shortener.web;
 
+import com.kyo.url_shortener.analytics.InvalidAnalyticsQueryException;
 import com.kyo.url_shortener.url.AliasAlreadyTakenException;
 import com.kyo.url_shortener.url.InvalidExpiryException;
 import com.kyo.url_shortener.url.ShortUrlExpiredException;
@@ -53,6 +54,13 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     ProblemDetail handleExpired(ShortUrlExpiredException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.GONE, ex.getMessage());
         problem.setTitle("Short URL expired");
+
+        return problem;
+    }
+    @ExceptionHandler(InvalidAnalyticsQueryException.class)
+    ProblemDetail handleInvalidAnalyticsQuery(InvalidAnalyticsQueryException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        problem.setTitle("Invalid analytics query");
 
         return problem;
     }
