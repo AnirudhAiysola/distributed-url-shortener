@@ -2,6 +2,7 @@ package com.kyo.url_shortener.url;
 
 import com.kyo.url_shortener.common.SingleFlight;
 import com.kyo.url_shortener.shortcode.ShortCodeGenerator;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,7 @@ public class ShortUrlService {
     private final ShortCodeGenerator generator;
     private final Clock clock;
     private final ShortUrlCache cache;
+    private final MeterRegistry meterRegistry;
     private final SingleFlight<String> singleFlight = new SingleFlight<>();
 
     // Deliberately NOT @Transactional: see concepts
@@ -68,10 +70,13 @@ public class ShortUrlService {
         Optional<String> cached = cache.get(code);
         if (cached.isPresent()) {
             if (cached.get().equals(ShortUrlCache.MISSING)) {
+                recordLookup("negative_hit");
                 throw new ShortUrlNotFoundException(code);
             }
+            recordLookup("hit");
             return cached.get();
         }
+        recordLookup("miss");
         return singleFlight.execute(code, () -> loadFromDatabase(code));
 
     }
@@ -98,5 +103,8 @@ public class ShortUrlService {
 
         cache.put(code, url.getLongUrl(), cacheTtl(url, now));
         return url.getLongUrl();
+    }
+    private void recordLookup(String result) {
+        meterRegistry.counter("shortener.cache.lookups", "result", result).increment();
     }
 }
