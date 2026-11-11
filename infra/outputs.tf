@@ -20,3 +20,11 @@ output "redis_endpoint" {
 output "click_events_queue_url" {
   value = aws_sqs_queue.click_events.url
 }
+
+output "app_url" {
+  description = "Public address of the app"
+  value       = "http://${aws_lb.main.dns_name}"
+}
+output "loadgen_instance_id" {
+  value = one(aws_instance.loadgen[*].id)
+}

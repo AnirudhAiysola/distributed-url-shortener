@@ -9,3 +9,12 @@ variable "project" {
   type        = string
   default     = "url-shortener"
 }
+variable "image_tag" {
+  description = "Docker image tag to deploy (the git commit ID)"
+  type        = string
+}
+variable "loadgen_enabled" {
+  description = "Create the k6 load-generator instance"
+  type        = bool
+  default     = false
+}
