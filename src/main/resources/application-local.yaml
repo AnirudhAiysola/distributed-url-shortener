@@ -1,0 +1,15 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5433/shortener
+    username: shortener
+    password: shortener
+  data:
+    redis:
+      host: localhost
+  cloud:
+    aws:
+      credentials:          # fake keys: ElasticMQ ignores them
+        access-key: local
+        secret-key: local
+      sqs:
+        endpoint: http://localhost:9324
